@@ -1,4 +1,4 @@
-from services.services import dashboard_goals, upload_csv_file, csv_file_to_dataframe, selection_box, expander_show_dataframe, filter_by_continent
+from services.services import dashboard_goals, upload_csv_file, csv_file_to_dataframe, selection_box, expander_show_dataframe, filter_by_continent, show_metrics
 import streamlit as st
 
 
@@ -12,7 +12,7 @@ def main() -> None:
     filter_by_continent(pd_dataframe)
     st.divider()
     expander_show_dataframe(pd_dataframe)
-
+    show_metrics(pd_dataframe)
 
 if __name__ == "__main__":
     main()
