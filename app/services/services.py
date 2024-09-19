@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
 from time import sleep
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 
 COLUMN_0 = "Continentes e paises de residencia permanente"
 
@@ -64,6 +67,7 @@ def selection_box(df: pd.DataFrame) -> None:
     """
     Questão num.3,4 e 5
     """
+
     if 'selected_column' not in st.session_state: ## Feito com ajuda de IA
         st.session_state.selected_column = None
     
@@ -73,15 +77,37 @@ def selection_box(df: pd.DataFrame) -> None:
     if check_box:
         try:
             data = df
-            list_columns = list(data.columns)
+            list_columns = list(df.columns)
             list_columns.remove(COLUMN_0) ## Poderia usar para remover com o índice
             select_box = st.selectbox("", list_columns, index=list_columns.index(st.session_state.selected_column) if st.session_state.selected_column else 0) ## Feito com ajuda de IA
             with st.spinner("Filtrando dados..."):
                 sleep(1)
                 st.session_state.selected_column = select_box ## Feito com ajuda de IA
-                st.dataframe(data[[COLUMN_0, select_box]])
+                st.dataframe(df[[COLUMN_0, select_box]])
+
+                data_paises = data[~data[COLUMN_0].str.strip().isin(["Total", "África", "América Central", "América do Norte", "América do Sul", "Ásia", "Europa", "Oceania", "Oriente Médio", "Outros"])].drop([4, 8, 27, 46, 52], axis=0).reset_index(drop=True)
+
+                for colunas in list_columns:
+                    data_paises[colunas] = pd.to_numeric(data_paises[colunas], errors='coerce')
+                data_paises = data_paises.sort_values(COLUMN_0)
+                fig, ax = plt.subplots()
+                ax.bar(data_paises[COLUMN_0], data_paises[select_box])
+                # plt.xticks(ticks=range(len(data_paises)), labels=data_paises[COLUMN_0], rotation=45)
+                ax.set_xlabel("Países")
+                ax.set_ylabel(select_box)
+                plt.xticks(ticks=range(len(data_paises[COLUMN_0])), labels=data_paises[COLUMN_0], rotation=90, fontsize=8)
+
+                # Ajustando o tamanho da fonte dos rótulos do eixo y
+                plt.yticks(fontsize=8)
+                # plt.ylim(data_paises[select_box].min(), data_paises[select_box].max())
+                # plt.yscale('log')
+
+
+                st.pyplot(fig) #Gráfico feito com ajuda de IA
+
+
                 
-                filtered_data_by_month = data[[COLUMN_0, select_box]]
+                filtered_data_by_month = df[[COLUMN_0, select_box]]
                 csv = filtered_data_by_month.to_csv(index=False)
                 st.download_button(label="Baixar dados", data=csv, file_name="filtered_monthly_data.csv", mime="text/csv")
         except:
@@ -112,3 +138,20 @@ def filter_by_continent(df: pd.DataFrame) -> None:
                 st.download_button(label="Baixar dados", data=csv, file_name="filtered_continent_data.csv", mime="text/csv")
         except:
             st.write("Carregue o arquivo.")
+
+
+def show_metrics(df: pd.DataFrame) -> None:
+    try:
+        st.markdown("Visitantes Totais de:")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            south_america = df._get_value(1, "Total")
+            st.metric(label="América do Sul", value=south_america)
+        with col2:
+            north_america = df._get_value(12, "Total")
+            st.metric(label="América do Norte", value=north_america)
+        with col3:
+            europe = df._get_value(32, "Total")
+            st.metric(label="Europa", value=europe)
+    except:
+        st.write("Carregue o arquivo.")
