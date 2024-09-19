@@ -36,12 +36,15 @@ def dashboard_goals() -> None:
         </style>
     """, unsafe_allow_html=True)
 
-
 def upload_csv_file() -> bytes:
     """
     Questão num.2: Realizar Upload de Arquivo CSV
     """
     csv_file = st.file_uploader("Carregue um arquivo .csv", type=["csv"])
+    return csv_file
+    
+@st.cache_data ## Não pode ser usado com widgets
+def csv_file_to_dataframe(csv_file: bytes) -> pd.DataFrame:
     if csv_file is not None:
         df = pd.read_csv(csv_file)
         return df
@@ -49,24 +52,21 @@ def upload_csv_file() -> bytes:
         return None
 
 
-def button_show_dataframe(df: pd.DataFrame) -> None:
-    button = st.button("Click")
-    data = df
-    # file = csv_file
-    # try:
-    if button and data == None:
-        st.write("Carregue o arquivo.")
-    elif button:
-        st.dataframe(data)
-    # except AttributeError as e: ## Feito com ajuda da IA.
-    #     st.write(f""" Faça o upload do arquivo.\n
-    #              Error: {str(e)}""")
+def expander_show_dataframe(df: pd.DataFrame) -> None:
+    with st.expander("Ver dados brutos"):
+        if df is None:
+            st.write("Carregue o arquivo.")
+        else:
+            st.dataframe(df)
 
 
 def selection_box(df: pd.DataFrame) -> None:
     """
     Questão num.3,4 e 5
     """
+    if 'selected_column' not in st.session_state: ## Feito com ajuda de IA
+        st.session_state.selected_column = None
+    
     check_box = st.checkbox("Filtrar, separadamente, pelos meses.")
     # if csv_file:
     #     file = csv_file
@@ -75,10 +75,12 @@ def selection_box(df: pd.DataFrame) -> None:
             data = df
             list_columns = list(data.columns)
             list_columns.remove(COLUMN_0) ## Poderia usar para remover com o índice
-            select_box = st.selectbox("", list_columns)
+            select_box = st.selectbox("", list_columns, index=list_columns.index(st.session_state.selected_column) if st.session_state.selected_column else 0) ## Feito com ajuda de IA
             with st.spinner("Filtrando dados..."):
                 sleep(1)
+                st.session_state.selected_column = select_box ## Feito com ajuda de IA
                 st.dataframe(data[[COLUMN_0, select_box]])
+                
                 filtered_data_by_month = data[[COLUMN_0, select_box]]
                 csv = filtered_data_by_month.to_csv(index=False)
                 st.download_button(label="Baixar dados", data=csv, file_name="filtered_monthly_data.csv", mime="text/csv")
